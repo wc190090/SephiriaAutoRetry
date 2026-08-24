@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 - 2026-08-25
+
+- Move preserved player network objects to the saved floor entrance immediately before restart.
+- Prevent stale death-room coordinates from revealing that room during floor regeneration.
+- Prevent stale coordinates from prematurely triggering boss entrance dialogue on retry.
+- Fall back to the original game-over flow if the active floor or its entrance spawn point cannot be validated.
+
 ## 0.2.2 - 2026-08-25
 
 - Move installer backups outside the Sephiria save directory to prevent recursive self-copying.

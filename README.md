@@ -4,7 +4,7 @@
 
 A BepInEx 5 mod for *Sephiria* that retries the current floor from its entrance checkpoint after a real death.
 
-Version 0.2.2 supports:
+Version 0.2.3 supports:
 
 - Single-player runs.
 - Host-only multiplayer: only the host installs the mod; guests use the unmodified game.
@@ -13,6 +13,8 @@ Version 0.2.2 supports:
 The multiplayer host must launch the game with `-allow_rejoin`. Add it in Steam under **Sephiria > Properties > General > Launch Options**. Guests do not need the mod or this launch option.
 
 At game over, the host validates the active connections against the TMP checkpoint, prevents the original result screen from deleting that checkpoint, invokes the game's own restart flow, and restores every connected player from the saved floor entrance. No custom network message or client-side protocol is used.
+
+Before the original restart begins, surviving network player objects are moved to the saved floor entrance. This prevents their stale death positions from revealing the death room or prematurely triggering a boss encounter while the floor is regenerated.
 
 ## Install
 

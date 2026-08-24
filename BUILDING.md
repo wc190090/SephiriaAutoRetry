@@ -28,7 +28,7 @@ vendor/BepInEx_win_x64_5.4.23.5.zip
 Then publish it with:
 
 ```powershell
-dotnet publish installer/SephiriaAutoRetry.Installer.csproj -c Release -r win-x64 --self-contained true -o artifacts/installer-v0.2.2
+dotnet publish installer/SephiriaAutoRetry.Installer.csproj -c Release -r win-x64 --self-contained true -o artifacts/installer-v0.2.3
 ```
 
 The game DLLs, BepInEx archive, build outputs, saves, and logs are intentionally ignored and must not be committed.

@@ -14,7 +14,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "local.sephiria.autoretry";
     public const string PluginName = "Sephiria Auto Retry";
-    public const string PluginVersion = "0.2.2";
+    public const string PluginVersion = "0.2.3";
 
     internal static ManualLogSource Log { get; private set; }
     internal static ConfigEntry<bool> Enabled { get; private set; }
@@ -104,6 +104,21 @@ public sealed class Plugin : BaseUnityPlugin
             Logger.LogWarning("等待楼层存档完成超过 10 秒；将继续重开，并保留现有 TMP 与备份。");
         }
 
+        if (!RetrySession.TryMovePlayersToCheckpointEntrance(out string positionError))
+        {
+            Logger.LogError("无法在重开前固定玩家入口坐标，恢复原版死亡结算：" + positionError);
+            if (multiplayer)
+            {
+                RetrySession.FallbackToOriginalRpcGameOver(spawner);
+            }
+            else
+            {
+                RetrySession.FallbackToOriginalClientGameOver(spawner);
+            }
+
+            yield break;
+        }
+
         try
         {
             if (networkManager == null)
@@ -179,6 +194,14 @@ public sealed class Plugin : BaseUnityPlugin
             AccessTools.Field(typeof(DungeonManager), "generatedFloors") == null)
         {
             error = "找不到死亡判定、楼层检查点或初始药水所需字段。";
+            return false;
+        }
+
+        if (AccessTools.Method(typeof(FloorGenerator), nameof(FloorGenerator.FindByGuid), new[] { typeof(string) }) == null ||
+            AccessTools.Method(typeof(FloorGenerator), nameof(FloorGenerator.FindSpawnPoint), new[] { typeof(string) }) == null ||
+            AccessTools.Method(typeof(CombatBehaviour), nameof(CombatBehaviour.ReqSetPosition), new[] { typeof(Vector3), typeof(bool) }) == null)
+        {
+            error = "找不到重开前入口定位所需接口。";
             return false;
         }
 

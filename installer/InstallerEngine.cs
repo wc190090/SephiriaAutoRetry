@@ -17,7 +17,7 @@ internal sealed class InstallResult
 
 internal static class InstallerEngine
 {
-    internal const string ModVersion = "0.2.2";
+    internal const string ModVersion = "0.2.3";
     internal const string BepInExVersion = "5.4.23.5";
     private const string BepInExResource = "SephiriaAutoRetry.Installer.Payload.BepInEx.zip";
     private const string ModResource = "SephiriaAutoRetry.Installer.Payload.Mod.dll";
@@ -363,7 +363,7 @@ internal static class InstallerEngine
     private static void ValidateModVersion(string path)
     {
         // ProductVersion can contain Git build metadata such as
-        // "0.2.2+69f67f1...", which System.Version intentionally rejects.
+        // "0.2.3+69f67f1...", which System.Version intentionally rejects.
         // FileVersion is numeric and is the correct value for this check.
         string? raw = FileVersionInfo.GetVersionInfo(path).FileVersion;
         if (!Version.TryParse(raw, out Version? actual) || !Version.TryParse(ModVersion, out Version? expected) ||

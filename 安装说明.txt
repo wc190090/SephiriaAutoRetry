@@ -1,6 +1,6 @@
-Sephiria Auto Retry v0.2.2 安装说明
+Sephiria Auto Retry v0.2.3 安装说明
 
-推荐方法：运行 SephiriaAutoRetry-OfflineInstaller-v0.2.2.exe。
+推荐方法：运行 SephiriaAutoRetry-OfflineInstaller-v0.2.3.exe。
 备份位置：文档\Saved Games\SephiriaModBackups\SephiriaAutoRetry（位于游戏存档目录之外）。
 
 手动方法：

@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
 using Mirror;
+using UnityEngine;
 
 namespace SephiriaAutoRetry;
 
 internal static class RetrySession
 {
     private const string TmpSuffix = "TMP";
+    private const string FloorEntranceSpawnPoint = "FLOORSTARTING";
 
     private static bool active;
     private static bool checkpointReloaded;
     private static string protectedProfile = "";
     private static string protectedTmpFile = "";
+    private static string checkpointFloorGuid = "";
     private static int generation;
     private static bool allowOriginalGameOverOnce;
     private static bool allowOriginalRpcGameOverOnce;
@@ -308,12 +311,76 @@ internal static class RetrySession
         checkpointReloaded = false;
         protectedProfile = profile;
         protectedTmpFile = profile + TmpSuffix;
+        checkpointFloorGuid = floorGuid;
         multiplayerRetry = multiplayer;
         expectedPlayerRestarts = Math.Max(1, playerCount);
         CompletedPlayerRestarts.Clear();
         string mode = multiplayer ? $"联机房主（{playerCount} 名玩家）" : "单人";
         Plugin.Log?.LogInfo($"角色死亡，开始{mode}自动重试：存档槽={profile}，LastFloorGuid={floorGuid}。");
         Plugin.StartProtectionTimeout(generation);
+    }
+
+    internal static bool TryMovePlayersToCheckpointEntrance(out string reason)
+    {
+        reason = null;
+        if (!active || string.IsNullOrWhiteSpace(checkpointFloorGuid))
+        {
+            reason = "自动重试检查点状态已失效。";
+            return false;
+        }
+
+        FloorGenerator floor = FloorGenerator.FindByGuid(checkpointFloorGuid);
+        if (floor == null || !floor.GenerateSuccess)
+        {
+            reason = "死亡楼层当前未完成生成，无法在重开前固定入口坐标。";
+            return false;
+        }
+
+        AreaSpawnPointProp entrance = floor.FindSpawnPoint(FloorEntranceSpawnPoint);
+        if (entrance == null)
+        {
+            reason = $"死亡楼层缺少 {FloorEntranceSpawnPoint} 入口点。";
+            return false;
+        }
+
+        if (PlayerSpawner.MultiplayerList == null || PlayerSpawner.MultiplayerList.Count != expectedPlayerRestarts)
+        {
+            reason = "重开前玩家列表数量发生变化。";
+            return false;
+        }
+
+        List<PlayerAvatar> players = new List<PlayerAvatar>(expectedPlayerRestarts);
+        foreach (PlayerSpawner spawner in PlayerSpawner.MultiplayerList)
+        {
+            if (spawner == null || spawner.PlayerAvatar == null)
+            {
+                reason = "重开前至少一名玩家对象已失效。";
+                return false;
+            }
+
+            players.Add(spawner.PlayerAvatar);
+        }
+
+        Vector3 position = entrance.SpawnPoint;
+        if (float.IsNaN(position.x) || float.IsNaN(position.y) || float.IsNaN(position.z) ||
+            float.IsInfinity(position.x) || float.IsInfinity(position.y) || float.IsInfinity(position.z))
+        {
+            reason = "死亡楼层入口坐标无效。";
+            return false;
+        }
+
+        foreach (PlayerAvatar player in players)
+        {
+            // Player network objects survive RestartGame(). Move the server transform first so
+            // newly generated room reveal and boss trigger checks cannot observe the death position.
+            // ReqSetPosition then mirrors the same quarantine position to an authority-owning client.
+            player.transform.position = position;
+            player.ReqSetPosition(position, teleport: true);
+        }
+
+        Plugin.Log?.LogInfo(
+            $"重开前已将 {players.Count} 名玩家固定到本层入口 {position}，避免旧死亡坐标触发地图揭示或 Boss 事件。");
+        return true;
     }
 
     internal static bool ShouldBlockDelete(string fileName)
@@ -445,6 +512,7 @@ internal static class RetrySession
         checkpointReloaded = false;
         protectedProfile = "";
         protectedTmpFile = "";
+        checkpointFloorGuid = "";
         multiplayerRetry = false;
         expectedPlayerRestarts = 0;
         CompletedPlayerRestarts.Clear();
