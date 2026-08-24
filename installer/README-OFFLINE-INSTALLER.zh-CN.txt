@@ -1,4 +1,4 @@
-Sephiria Auto Retry v0.2.0 离线安装器
+Sephiria Auto Retry v0.2.1 离线安装器
 
 - 内置官方未修改的 BepInEx 5.4.23.5 x64 和本 Mod。
 - 自动查找 Steam 游戏目录，也可手动选择。

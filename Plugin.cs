@@ -14,7 +14,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string PluginGuid = "local.sephiria.autoretry";
     public const string PluginName = "Sephiria Auto Retry";
-    public const string PluginVersion = "0.2.0";
+    public const string PluginVersion = "0.2.1";
 
     internal static ManualLogSource Log { get; private set; }
     internal static ConfigEntry<bool> Enabled { get; private set; }

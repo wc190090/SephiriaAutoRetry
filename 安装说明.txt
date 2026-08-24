@@ -1,6 +1,6 @@
-Sephiria Auto Retry v0.2.0 安装说明
+Sephiria Auto Retry v0.2.1 安装说明
 
-推荐方法：运行 SephiriaAutoRetry-OfflineInstaller-v0.2.0.exe。
+推荐方法：运行 SephiriaAutoRetry-OfflineInstaller-v0.2.1.exe。
 
 手动方法：
 1. 确认已经安装 BepInEx 5 x64。

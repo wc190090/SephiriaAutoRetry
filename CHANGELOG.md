@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 - 2026-08-24
+
+- Keep the installer UI responsive while saves and previous plugin files are backed up.
+- Show backup source and destination before copying begins so long backups no longer look like a failed click.
+- Run uninstall backup work outside the UI thread as well.
+
 ## 0.2.0 - 2026-08-24
 
 - Added host-only multiplayer retry. Guests do not install the mod.

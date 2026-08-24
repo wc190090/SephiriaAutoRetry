@@ -4,7 +4,7 @@
 
 A BepInEx 5 mod for *Sephiria* that retries the current floor from its entrance checkpoint after a real death.
 
-Version 0.2.0 supports:
+Version 0.2.1 supports:
 
 - Single-player runs.
 - Host-only multiplayer: only the host installs the mod; guests use the unmodified game.

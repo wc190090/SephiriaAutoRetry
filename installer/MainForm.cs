@@ -184,12 +184,14 @@ internal sealed class MainForm : Form
         }
     }
 
-    private void Install()
+    private async void Install()
     {
         SetBusy(true);
+        AppendLog("开始安装/更新；窗口会保持响应，请等待备份与校验完成……");
         try
         {
-            InstallResult result = InstallerEngine.Install(gamePathBox.Text, AppendLog);
+            string gameRoot = gamePathBox.Text;
+            InstallResult result = await Task.Run(() => InstallerEngine.Install(gameRoot, AppendLog));
             string bepinex = result.InstalledBepInEx ? $"已安装 BepInEx {InstallerEngine.BepInExVersion}。" : "保留了现有 BepInEx。";
             string backup = result.BackupPath == null ? "本次没有需要备份的文件。" : $"备份：\n{result.BackupPath}";
             MessageBox.Show(
@@ -211,7 +213,7 @@ internal sealed class MainForm : Form
         }
     }
 
-    private void Uninstall()
+    private async void Uninstall()
     {
         if (MessageBox.Show(
                 this,
@@ -225,9 +227,11 @@ internal sealed class MainForm : Form
         }
 
         SetBusy(true);
+        AppendLog("开始备份并卸载本 Mod……");
         try
         {
-            string? backup = InstallerEngine.Uninstall(gamePathBox.Text, AppendLog);
+            string gameRoot = gamePathBox.Text;
+            string? backup = await Task.Run(() => InstallerEngine.Uninstall(gameRoot, AppendLog));
             MessageBox.Show(this, backup == null ? "未检测到本 Mod。" : $"卸载完成。\n\n备份：\n{backup}", "卸载完成");
         }
         catch (Exception ex)
@@ -270,6 +274,12 @@ internal sealed class MainForm : Form
 
     private void AppendLog(string message)
     {
+        if (InvokeRequired)
+        {
+            Invoke(new Action<string>(AppendLog), message);
+            return;
+        }
+
         logBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
         logBox.SelectionStart = logBox.TextLength;
         logBox.ScrollToCaret();

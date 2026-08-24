@@ -17,7 +17,7 @@ internal sealed class InstallResult
 
 internal static class InstallerEngine
 {
-    internal const string ModVersion = "0.2.0";
+    internal const string ModVersion = "0.2.1";
     internal const string BepInExVersion = "5.4.23.5";
     private const string BepInExResource = "SephiriaAutoRetry.Installer.Payload.BepInEx.zip";
     private const string ModResource = "SephiriaAutoRetry.Installer.Payload.Mod.dll";
@@ -88,6 +88,7 @@ internal static class InstallerEngine
         if (backupSave && Directory.Exists(savePath))
         {
             backupPath = CreateBackupDirectory(timestamp, backupRootOverride);
+            log($"正在备份存档：{savePath} → {Path.Combine(backupPath, "Save")}");
             CopyDirectory(savePath, Path.Combine(backupPath, "Save"));
             log($"存档已备份：{Path.Combine(backupPath, "Save")}");
         }
@@ -130,6 +131,7 @@ internal static class InstallerEngine
         {
             RejectReparsePoint(pluginDirectory);
             backupPath ??= CreateBackupDirectory(timestamp, backupRootOverride);
+            log($"正在备份旧版插件：{pluginDirectory} → {Path.Combine(backupPath, "PreviousPlugin")}");
             CopyDirectory(pluginDirectory, Path.Combine(backupPath, "PreviousPlugin"));
             log($"旧版插件已备份：{Path.Combine(backupPath, "PreviousPlugin")}");
         }
@@ -269,7 +271,7 @@ internal static class InstallerEngine
             return null;
         }
 
-        string? value = FileVersionInfo.GetVersionInfo(path).ProductVersion;
+        string? value = FileVersionInfo.GetVersionInfo(path).FileVersion;
         return Version.TryParse(value, out Version? version) ? version.ToString(3) : value;
     }
 
@@ -327,7 +329,10 @@ internal static class InstallerEngine
 
     private static void ValidateModVersion(string path)
     {
-        string? raw = FileVersionInfo.GetVersionInfo(path).ProductVersion;
+        // ProductVersion can contain Git build metadata such as
+        // "0.2.1+69f67f1...", which System.Version intentionally rejects.
+        // FileVersion is numeric and is the correct value for this check.
+        string? raw = FileVersionInfo.GetVersionInfo(path).FileVersion;
         if (!Version.TryParse(raw, out Version? actual) || !Version.TryParse(ModVersion, out Version? expected) ||
             actual.Major != expected.Major || actual.Minor != expected.Minor || actual.Build != expected.Build)
         {
