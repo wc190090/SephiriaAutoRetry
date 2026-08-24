@@ -1,0 +1,13 @@
+Sephiria Auto Retry 离线安装器：第三方软件声明
+================================================
+
+本安装器内置以下第三方软件的官方未修改发行包：
+
+BepInEx 5.4.23.5 x64
+项目主页：https://github.com/BepInEx/BepInEx
+官方发行页：https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5
+许可证：MIT License
+
+BepInEx 及其随附组件的版权归其各自作者所有。
+本安装器和 Sephiria Auto Retry 与 TEAM HORAY、Sephiria 或 BepInEx 项目均无官方隶属或背书关系。
+完整 BepInEx 许可证见 BepInEx-LICENSE.txt。

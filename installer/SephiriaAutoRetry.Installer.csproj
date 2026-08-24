@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>SephiriaAutoRetry-OfflineInstaller</AssemblyName>
+    <RootNamespace>SephiriaAutoRetry.Installer</RootNamespace>
+    <Version>0.2.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\vendor\BepInEx_win_x64_5.4.23.5.zip"
+                      Link="Payload\BepInEx.zip"
+                      LogicalName="SephiriaAutoRetry.Installer.Payload.BepInEx.zip" />
+    <EmbeddedResource Include="..\bin\Release\SephiriaAutoRetry.dll"
+                      Link="Payload\SephiriaAutoRetry.dll"
+                      LogicalName="SephiriaAutoRetry.Installer.Payload.Mod.dll" />
+    <EmbeddedResource Include="licenses\BepInEx-LICENSE.txt"
+                      LogicalName="SephiriaAutoRetry.Installer.Licenses.BepInEx.txt" />
+    <EmbeddedResource Include="THIRD-PARTY-NOTICES.txt"
+                      LogicalName="SephiriaAutoRetry.Installer.ThirdPartyNotices.txt" />
+  </ItemGroup>
+
+  <Target Name="ValidateInstallerPayload" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('..\bin\Release\SephiriaAutoRetry.dll')"
+           Text="请先构建 SephiriaAutoRetry Release DLL。" />
+    <Error Condition="!Exists('..\vendor\BepInEx_win_x64_5.4.23.5.zip')"
+           Text="缺少 BepInEx 5.4.23.5 x64 离线载荷。" />
+    <Error Condition="!Exists('licenses\BepInEx-LICENSE.txt')"
+           Text="缺少 BepInEx MIT 许可证。" />
+  </Target>
+</Project>

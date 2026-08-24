@@ -1,0 +1,20 @@
+Sephiria Auto Retry v0.2.0 安装说明
+
+推荐方法：运行 SephiriaAutoRetry-OfflineInstaller-v0.2.0.exe。
+
+手动方法：
+1. 确认已经安装 BepInEx 5 x64。
+2. 将压缩包内容解压到 Sephiria 游戏根目录。
+3. 确认文件位于 BepInEx\plugins\SephiriaAutoRetry\SephiriaAutoRetry.dll。
+
+联机仅房主安装：
+1. 只有房主安装本 Mod。
+2. 房主在 Steam → Sephiria → 属性 → 通用 → 启动选项中填写：-allow_rejoin
+3. 完全退出并重新启动游戏后再开房。
+4. 客人无需安装 Mod，也无需启动参数。
+
+卸载：关闭游戏后删除 BepInEx\plugins\SephiriaAutoRetry 文件夹。
+
+下载与更新：
+GitHub: https://github.com/wc190090/SephiriaAutoRetry/releases/latest
+Gitee:  https://gitee.com/wc190092/SephiriaAutoRetry/releases

@@ -1,0 +1,13 @@
+bin/
+obj/
+artifacts/
+vendor/
+.vs/
+*.user
+*.suo
+*.dll
+*.exe
+*.zip
+*.pdb
+*.sav
+*.log

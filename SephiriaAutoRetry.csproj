@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>SephiriaAutoRetry</AssemblyName>
+    <RootNamespace>SephiriaAutoRetry</RootNamespace>
+    <Version>0.2.0</Version>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <NuGetAudit>false</NuGetAudit>
+    <SephiriaDir Condition="'$(SephiriaDir)' == ''">$(SEPHIRIA_DIR)</SephiriaDir>
+    <BepInExCoreDir Condition="'$(BepInExCoreDir)' == ''">$(SephiriaDir)\BepInEx\core</BepInExCoreDir>
+    <GameManagedDir>$(SephiriaDir)\Sephiria_Data\Managed</GameManagedDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="installer\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BepInEx" HintPath="$(BepInExCoreDir)\BepInEx.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(BepInExCoreDir)\0Harmony.dll" Private="false" />
+    <Reference Include="Assembly-CSharp" HintPath="$(GameManagedDir)\Assembly-CSharp.dll" Private="false" />
+    <Reference Include="Mirror" HintPath="$(GameManagedDir)\Mirror.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(GameManagedDir)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(GameManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="ValidateGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(SephiriaDir)' == ''"
+           Text="请通过 /p:SephiriaDir=&quot;游戏目录&quot; 或 SEPHIRIA_DIR 环境变量指定 Sephiria 安装目录。" />
+    <Error Condition="!Exists('$(GameManagedDir)\Assembly-CSharp.dll')"
+           Text="在 $(GameManagedDir) 中找不到 Assembly-CSharp.dll，请检查 SephiriaDir。" />
+    <Error Condition="!Exists('$(BepInExCoreDir)\BepInEx.dll')"
+           Text="在 $(BepInExCoreDir) 中找不到 BepInEx.dll，请先安装 BepInEx 5。" />
+  </Target>
+</Project>
