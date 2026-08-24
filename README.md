@@ -4,7 +4,7 @@
 
 A BepInEx 5 mod for *Sephiria* that retries the current floor from its entrance checkpoint after a real death.
 
-Version 0.2.1 supports:
+Version 0.2.2 supports:
 
 - Single-player runs.
 - Host-only multiplayer: only the host installs the mod; guests use the unmodified game.
@@ -20,6 +20,8 @@ Download one of the assets from the [latest GitHub release](https://github.com/w
 
 - Run the offline installer; or
 - Extract the manual ZIP into the game's root directory.
+
+Installer backups are stored at `Documents\Saved Games\SephiriaModBackups\SephiriaAutoRetry`, outside the game's save directory. The installer rejects overlapping backup paths and excludes the legacy `Sephiria\ModBackups` directory.
 
 For manual installation, BepInEx 5 x64 must already be installed. The DLL belongs at:
 

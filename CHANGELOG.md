@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 - 2026-08-25
+
+- Move installer backups outside the Sephiria save directory to prevent recursive self-copying.
+- Reject any overlapping source and destination paths before a backup directory is created.
+- Exclude the legacy `ModBackups` directory when backing up saves.
+- Add installer self-tests for both the exclusion rule and recursive-path rejection.
+
 ## 0.2.1 - 2026-08-24
 
 - Keep the installer UI responsive while saves and previous plugin files are backed up.

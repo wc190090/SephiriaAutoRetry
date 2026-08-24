@@ -17,7 +17,7 @@ internal sealed class InstallResult
 
 internal static class InstallerEngine
 {
-    internal const string ModVersion = "0.2.1";
+    internal const string ModVersion = "0.2.2";
     internal const string BepInExVersion = "5.4.23.5";
     private const string BepInExResource = "SephiriaAutoRetry.Installer.Payload.BepInEx.zip";
     private const string ModResource = "SephiriaAutoRetry.Installer.Payload.Mod.dll";
@@ -71,7 +71,8 @@ internal static class InstallerEngine
         Action<string> log,
         bool checkGameProcess = true,
         bool backupSave = true,
-        string? backupRootOverride = null)
+        string? backupRootOverride = null,
+        string? savePathOverride = null)
     {
         string gameRoot = ValidateGameRoot(requestedRoot);
         if (checkGameProcess)
@@ -81,16 +82,14 @@ internal static class InstallerEngine
 
         string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
         string? backupPath = null;
-        string savePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "Saved Games",
-            "Sephiria");
+        string savePath = savePathOverride ?? GetSaveDirectory();
         if (backupSave && Directory.Exists(savePath))
         {
-            backupPath = CreateBackupDirectory(timestamp, backupRootOverride);
-            log($"正在备份存档：{savePath} → {Path.Combine(backupPath, "Save")}");
-            CopyDirectory(savePath, Path.Combine(backupPath, "Save"));
-            log($"存档已备份：{Path.Combine(backupPath, "Save")}");
+            backupPath = CreateBackupDirectory(timestamp, backupRootOverride, savePath);
+            string saveBackupPath = Path.Combine(backupPath, "Save");
+            log($"正在备份存档：{savePath} → {saveBackupPath}");
+            CopyDirectory(savePath, saveBackupPath, Path.Combine(savePath, "ModBackups"));
+            log($"存档已备份：{saveBackupPath}");
         }
 
         string coreDll = Path.Combine(gameRoot, "BepInEx", "core", "BepInEx.dll");
@@ -130,7 +129,7 @@ internal static class InstallerEngine
         if (Directory.Exists(pluginDirectory))
         {
             RejectReparsePoint(pluginDirectory);
-            backupPath ??= CreateBackupDirectory(timestamp, backupRootOverride);
+            backupPath ??= CreateBackupDirectory(timestamp, backupRootOverride, pluginDirectory);
             log($"正在备份旧版插件：{pluginDirectory} → {Path.Combine(backupPath, "PreviousPlugin")}");
             CopyDirectory(pluginDirectory, Path.Combine(backupPath, "PreviousPlugin"));
             log($"旧版插件已备份：{Path.Combine(backupPath, "PreviousPlugin")}");
@@ -196,7 +195,10 @@ internal static class InstallerEngine
         }
 
         RejectReparsePoint(pluginDirectory);
-        string backup = CreateBackupDirectory(DateTime.Now.ToString("yyyyMMdd-HHmmss-fff"), backupRootOverride);
+        string backup = CreateBackupDirectory(
+            DateTime.Now.ToString("yyyyMMdd-HHmmss-fff"),
+            backupRootOverride,
+            pluginDirectory);
         CopyDirectory(pluginDirectory, Path.Combine(backup, "UninstalledPlugin"));
         Directory.Delete(pluginDirectory, recursive: true);
         log("已卸载本 Mod；BepInEx、其他 Mod、配置和存档均未删除。");
@@ -213,16 +215,47 @@ internal static class InstallerEngine
 
         Directory.CreateDirectory(root);
         File.WriteAllText(Path.Combine(root, "Sephiria.exe"), "installer self test");
+        string fakeSave = Path.Combine(root, "FakeUserData", "Sephiria");
+        Directory.CreateDirectory(fakeSave);
+        File.WriteAllText(Path.Combine(fakeSave, "SLOT1.sav"), "save sentinel");
+        string legacyBackup = Path.Combine(fakeSave, "ModBackups", "SephiriaAutoRetry", "legacy");
+        Directory.CreateDirectory(legacyBackup);
+        File.WriteAllText(Path.Combine(legacyBackup, "must-not-copy.txt"), "recursive backup junk");
         List<string> messages = new();
         InstallResult first = Install(
             root,
             messages.Add,
             checkGameProcess: false,
-            backupSave: false,
-            backupRootOverride: Path.Combine(root, "Backups"));
-        if (!first.InstalledBepInEx || !File.Exists(first.ModPath))
+            backupSave: true,
+            backupRootOverride: Path.Combine(root, "Backups"),
+            savePathOverride: fakeSave);
+        if (!first.InstalledBepInEx || !File.Exists(first.ModPath) || first.BackupPath == null ||
+            !File.Exists(Path.Combine(first.BackupPath, "Save", "SLOT1.sav")) ||
+            Directory.Exists(Path.Combine(first.BackupPath, "Save", "ModBackups")))
         {
-            throw new InvalidOperationException("首次安装自检失败。");
+            throw new InvalidOperationException("首次安装/存档备份排除规则自检失败。");
+        }
+
+        bool rejectedRecursiveBackup = false;
+        try
+        {
+            Install(
+                root,
+                messages.Add,
+                checkGameProcess: false,
+                backupSave: true,
+                backupRootOverride: Path.Combine(fakeSave, "UnsafeBackups"),
+                savePathOverride: fakeSave);
+        }
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("拒绝重叠的备份路径", StringComparison.Ordinal))
+        {
+            rejectedRecursiveBackup = true;
+        }
+
+        if (!rejectedRecursiveBackup || Directory.Exists(Path.Combine(fakeSave, "UnsafeBackups")))
+        {
+            throw new InvalidOperationException("递归备份路径保护自检失败。");
         }
 
         string sentinel = Path.Combine(root, "BepInEx", "plugins", "OtherMod", "keep.txt");
@@ -330,7 +363,7 @@ internal static class InstallerEngine
     private static void ValidateModVersion(string path)
     {
         // ProductVersion can contain Git build metadata such as
-        // "0.2.1+69f67f1...", which System.Version intentionally rejects.
+        // "0.2.2+69f67f1...", which System.Version intentionally rejects.
         // FileVersion is numeric and is the correct value for this check.
         string? raw = FileVersionInfo.GetVersionInfo(path).FileVersion;
         if (!Version.TryParse(raw, out Version? actual) || !Version.TryParse(ModVersion, out Version? expected) ||
@@ -363,20 +396,34 @@ internal static class InstallerEngine
         return Convert.ToHexString(SHA256.HashData(stream));
     }
 
-    private static string CreateBackupDirectory(string timestamp, string? overrideRoot)
+    private static string GetSaveDirectory() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        "Saved Games",
+        "Sephiria");
+
+    private static string CreateBackupDirectory(string timestamp, string? overrideRoot, string sourceToAvoid)
     {
         string baseRoot = overrideRoot ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
             "Saved Games",
-            "Sephiria",
-            "ModBackups",
+            "SephiriaModBackups",
             "SephiriaAutoRetry");
-        string result = Path.Combine(Path.GetFullPath(baseRoot), timestamp);
+        string result = Path.GetFullPath(Path.Combine(baseRoot, timestamp));
+        EnsurePathsDoNotOverlap(sourceToAvoid, result);
         Directory.CreateDirectory(result);
         return result;
     }
 
-    private static void CopyDirectory(string source, string destination)
+    private static void CopyDirectory(string source, string destination, string? excludedDirectory = null)
+    {
+        string sourcePath = NormalizePath(source);
+        string destinationPath = NormalizePath(destination);
+        EnsurePathsDoNotOverlap(sourcePath, destinationPath);
+        string? excludedPath = excludedDirectory == null ? null : NormalizePath(excludedDirectory);
+        CopyDirectoryCore(sourcePath, destinationPath, excludedPath);
+    }
+
+    private static void CopyDirectoryCore(string source, string destination, string? excludedDirectory)
     {
         DirectoryInfo sourceInfo = new(source);
         RejectReparsePoint(sourceInfo.FullName);
@@ -388,10 +435,35 @@ internal static class InstallerEngine
 
         foreach (DirectoryInfo child in sourceInfo.GetDirectories())
         {
+            if (excludedDirectory != null && PathsEqual(child.FullName, excludedDirectory))
+            {
+                continue;
+            }
+
             RejectReparsePoint(child.FullName);
-            CopyDirectory(child.FullName, Path.Combine(destination, child.Name));
+            CopyDirectoryCore(child.FullName, Path.Combine(destination, child.Name), excludedDirectory);
         }
     }
+
+    private static void EnsurePathsDoNotOverlap(string source, string destination)
+    {
+        string sourcePath = NormalizePath(source);
+        string destinationPath = NormalizePath(destination);
+        if (PathsEqual(sourcePath, destinationPath) || IsChildPath(sourcePath, destinationPath) ||
+            IsChildPath(destinationPath, sourcePath))
+        {
+            throw new InvalidOperationException(
+                $"拒绝重叠的备份路径，避免递归复制：{sourcePath} → {destinationPath}");
+        }
+    }
+
+    private static bool IsChildPath(string parent, string candidate) =>
+        NormalizePath(candidate).StartsWith(
+            NormalizePath(parent) + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase);
+
+    private static bool PathsEqual(string left, string right) =>
+        string.Equals(NormalizePath(left), NormalizePath(right), StringComparison.OrdinalIgnoreCase);
 
     private static void RejectReparsePoint(string path)
     {

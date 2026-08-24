@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>SephiriaAutoRetry</AssemblyName>
     <RootNamespace>SephiriaAutoRetry</RootNamespace>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NuGetAudit>false</NuGetAudit>
